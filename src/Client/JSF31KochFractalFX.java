@@ -28,6 +28,7 @@ import Shared.Edge;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import javafx.scene.control.Spinner;
 
 /**
  *
@@ -36,6 +37,7 @@ import java.util.TimerTask;
 public class JSF31KochFractalFX extends Application {
 
     public static List<Edge> edges = new ArrayList<>();
+    private SocketClient sc;
 
     // Zoom and drag
     private double zoomTranslateX = 0.0;
@@ -48,7 +50,6 @@ public class JSF31KochFractalFX extends Application {
 
     // Current level of Koch fractal
     public static int currentLevel = 1;
-    public static int previousLevel = 0;
 
     // Labels for level, nr edges, calculation time, and drawing time
     private Label labelLevel;
@@ -64,16 +65,8 @@ public class JSF31KochFractalFX extends Application {
     private final int kpWidth = 500;
     private final int kpHeight = 500;
 
-    // Progress bars
-    private Label labelLeftEdge;
-    private ProgressBar pbLeft;
-    private Label labelLeftNrEdges;
-    private Label labelBottomEdge;
-    private ProgressBar pbBottom;
-    private Label labelBottomNrEdges;
-    private Label labelRightEdge;
-    private ProgressBar pbRight;
-    private Label labelRightNrEdges;
+    // level
+    Spinner spinnerLevel;
 
     @Override
     public void start(Stage primaryStage) throws IOException {
@@ -98,10 +91,13 @@ public class JSF31KochFractalFX extends Application {
         labelNrEdgesText.setText("" + edges.size());
         grid.add(labelNrEdges, 0, 0, 4, 1);
         grid.add(labelNrEdgesText, 4, 0, 22, 1);
-        
+
         // Label to present current level of Koch fractal
         labelLevel = new Label("Level: " + currentLevel);
         grid.add(labelLevel, 4, 2);
+
+        spinnerLevel = new Spinner(1, 10, 1);
+        grid.add(spinnerLevel, 0, 3);
 
         // Button to fit Koch fractal in Koch panel
         Button buttonFitFractal = new Button();
@@ -114,6 +110,32 @@ public class JSF31KochFractalFX extends Application {
 
         });
         grid.add(buttonFitFractal, 0, 2);
+
+        Button buttonEdgesList = new Button();
+        buttonEdgesList.setText("Get List");
+        buttonEdgesList.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                edges.clear();
+                sc = new SocketClient();
+                edges = sc.getEdges(getSpinnerLevel());
+                requestDrawEdges();
+            }
+        });
+        grid.add(buttonEdgesList, 1, 3);
+
+        Button buttonEdgesLos = new Button();
+        buttonEdgesLos.setText("Get Individual");
+        buttonEdgesLos.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                sc = new SocketClient();
+                for (int i = 0; i < (int) (3 * Math.pow(4, getSpinnerLevel() - 1)); i++) {
+                    requestDrawEdge(sc.getEdge(getSpinnerLevel()));
+                }
+            }
+        });
+        grid.add(buttonEdgesLos, 2, 3);
 
         // Add mouse clicked event to Koch panel
         kochPanel.addEventHandler(MouseEvent.MOUSE_CLICKED,
@@ -146,15 +168,17 @@ public class JSF31KochFractalFX extends Application {
 
         // Create the scene and add the grid pane
         Group root = new Group();
-        Scene scene = new Scene(root, kpWidth + 50, kpHeight + 100);
+        Scene scene = new Scene(root, kpWidth + 50, kpHeight + 135);
         root.getChildren().add(grid);
 
         // Define title and assign the scene for main window
         primaryStage.setTitle("Koch Fractal");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
 
-        drawEdges();
+    public int getSpinnerLevel() {
+        return (int) spinnerLevel.getValue();
     }
 
     public void drawEdges() {
@@ -197,7 +221,7 @@ public class JSF31KochFractalFX extends Application {
     public void setTextNrEdges(String text) {
         labelNrEdgesText.setText(text);
     }
-    
+
     public void requestDrawEdges() {
         Platform.runLater(new Runnable() {
             @Override
