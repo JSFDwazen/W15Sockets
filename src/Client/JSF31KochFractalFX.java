@@ -26,15 +26,19 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import Shared.Edge;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.scene.control.Spinner;
 
 /**
  *
  * @author Nico Kuijpers
  */
-public class JSF31KochFractalFX extends Application {
+public class JSF31KochFractalFX extends Application implements Observer {
 
     public static List<Edge> edges = new ArrayList<>();
     private SocketClient sc;
@@ -129,10 +133,11 @@ public class JSF31KochFractalFX extends Application {
         buttonEdgesLos.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
+                edges.clear();
+                clearKochPanel();
                 sc = new SocketClient();
-                for (int i = 0; i < (int) (3 * Math.pow(4, getSpinnerLevel() - 1)); i++) {
-                    requestDrawEdge(sc.getEdge(getSpinnerLevel()));
-                }
+                sc.addObserver(JSF31KochFractalFX.this);
+                sc.getEdge(getSpinnerLevel());
             }
         });
         grid.add(buttonEdgesLos, 2, 3);
@@ -294,5 +299,10 @@ public class JSF31KochFractalFX extends Application {
                 drawEdge(e);
             }
         });
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+        requestDrawEdge((Edge) arg);
     }
 }

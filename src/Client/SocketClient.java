@@ -12,6 +12,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
  *
  * @author jsf3
  */
-public class SocketClient {
+public class SocketClient extends Observable {
 
     private static final Logger LOG = Logger.getLogger(SocketClient.class.getName());
     private Thread t;
@@ -53,16 +54,18 @@ public class SocketClient {
         return null;
     }
 
-    public Edge getEdge(int level) {
+    public void getEdge(int level) {
         try {
             out.writeObject(2);
             out.writeObject(level);
             out.flush();
-
-            return (Edge) in.readObject();
+            for (int i = 0; i < (int) (3 * Math.pow(4, level - 1)); i++) {
+                Edge e = (Edge) in.readObject();
+                this.setChanged();
+                this.notifyObservers(e);
+            }
         } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(SocketClient.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return null;
     }
 }
