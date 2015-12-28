@@ -68,4 +68,20 @@ public class SocketClient extends Observable {
             Logger.getLogger(SocketClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
+    Edge edgeAfterZoomAndDrag(double zoom, double zoomTranslateX, double zoomTranslateY, Edge e) {
+        try {
+            out.writeObject(3);
+            out.writeObject(zoom);
+            out.writeObject(zoomTranslateX);
+            out.writeObject(zoomTranslateY);
+            out.writeObject(e);
+            out.flush();
+
+            return (Edge) in.readObject();
+        } catch (IOException | ClassNotFoundException ex) {
+            Logger.getLogger(SocketClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
 }

@@ -4,15 +4,11 @@
  */
 package Client;
 
-//import calculate.*;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -28,11 +24,10 @@ import Shared.Edge;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.scene.control.Spinner;
+import TimeStamp.TimeStamp;
 
 /**
  *
@@ -59,8 +54,11 @@ public class JSF31KochFractalFX extends Application implements Observer {
     private Label labelLevel;
     private Label labelNrEdges;
     private Label labelNrEdgesText;
-    private Label labelCalc;
-    private Label labelCalcText;
+    private Label labelDrawingProgress;
+    private Label labelDrawingProgressCurrent;
+    private Label labelDrawingProgressOutOf;
+    private Label labelDrawingProgressMax;
+    private ProgressBar pbDrawing;
     private Label labelDraw;
     private Label labelDrawText;
 
@@ -68,6 +66,8 @@ public class JSF31KochFractalFX extends Application implements Observer {
     private Canvas kochPanel;
     private final int kpWidth = 500;
     private final int kpHeight = 500;
+
+    private TimeStamp tsGenerate = new TimeStamp();
 
     // level
     Spinner spinnerLevel;
@@ -82,98 +82,100 @@ public class JSF31KochFractalFX extends Application implements Observer {
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
 
-        // For debug purposes
-        // Make de grid lines visible
-        // grid.setGridLinesVisible(true);
         // Drawing panel for Koch fractal
         kochPanel = new Canvas(kpWidth, kpHeight);
-        grid.add(kochPanel, 0, 1, 25, 1);
 
         // Labels to present number of edges for Koch fractal
         labelNrEdges = new Label("Nr edges:");
         labelNrEdgesText = new Label();
         labelNrEdgesText.setText("" + edges.size());
-        grid.add(labelNrEdges, 0, 0, 4, 1);
-        grid.add(labelNrEdgesText, 4, 0, 22, 1);
+        labelDrawingProgress = new Label("Drawing progress:");
+        pbDrawing = new ProgressBar(-1.0);
+        labelDrawingProgressCurrent = new Label("0");
+        labelDrawingProgressOutOf = new Label("out of");
+        labelDrawingProgressMax = new Label("0");
 
+        // Labels to present time of drawing for Koch fractal
+        labelDraw = new Label("Drawing time:");
+        labelDrawText = new Label("0 mSec");
         // Label to present current level of Koch fractal
-        labelLevel = new Label("Level: " + currentLevel);
-        grid.add(labelLevel, 4, 2);
-
+        labelLevel = new Label("Level: 0");
         spinnerLevel = new Spinner(1, 10, 1);
-        grid.add(spinnerLevel, 0, 3);
 
         // Button to fit Koch fractal in Koch panel
         Button buttonFitFractal = new Button();
         buttonFitFractal.setText("Fit Fractal");
-        buttonFitFractal.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                fitFractalButtonActionPerformed(event);
-            }
-
+        buttonFitFractal.setOnAction((ActionEvent event) -> {
+            fitFractalButtonActionPerformed(event);
         });
-        grid.add(buttonFitFractal, 0, 2);
 
         Button buttonEdgesList = new Button();
         buttonEdgesList.setText("Get List");
-        buttonEdgesList.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                edges.clear();
-                sc = new SocketClient();
-                edges = sc.getEdges(getSpinnerLevel());
-                requestDrawEdges();
-            }
+        buttonEdgesList.setOnAction((ActionEvent event) -> {
+            edges.clear();
+            updateGui();
+            sc = new SocketClient();
+            tsGenerate.setBegin();
+            edges = sc.getEdges(getSpinnerLevel());
+            requestDrawEdges();
+            tsGenerate.setEnd();
+            labelDrawText.setText(tsGenerate.toString());
+            tsGenerate.init();
         });
-        grid.add(buttonEdgesList, 1, 3);
 
         Button buttonEdgesLos = new Button();
         buttonEdgesLos.setText("Get Individual");
-        buttonEdgesLos.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                edges.clear();
-                clearKochPanel();
-                sc = new SocketClient();
-                sc.addObserver(JSF31KochFractalFX.this);
-                sc.getEdge(getSpinnerLevel());
-            }
+        buttonEdgesLos.setOnAction((ActionEvent event) -> {
+            edges.clear();
+            updateGui();
+            clearKochPanel();
+            sc = new SocketClient();
+            tsGenerate.setBegin();
+            sc.addObserver(JSF31KochFractalFX.this);
+            sc.getEdge(getSpinnerLevel());
+            tsGenerate.setEnd();
+            labelDrawText.setText(tsGenerate.toString());
+            tsGenerate.init();
         });
-        grid.add(buttonEdgesLos, 2, 3);
 
         // Add mouse clicked event to Koch panel
-        kochPanel.addEventHandler(MouseEvent.MOUSE_CLICKED,
-                new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent event) {
-                        kochPanelMouseClicked(event);
-                    }
-                });
+        kochPanel.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
+            kochPanelMouseClicked(event);
+        });
 
         // Add mouse pressed event to Koch panel
-        kochPanel.addEventHandler(MouseEvent.MOUSE_PRESSED,
-                new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent event) {
-                        kochPanelMousePressed(event);
-                    }
-                });
+        kochPanel.addEventHandler(MouseEvent.MOUSE_PRESSED, (MouseEvent event) -> {
+            kochPanelMousePressed(event);
+        });
 
         // Add mouse dragged event to Koch panel
-        kochPanel.setOnMouseDragged(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                kochPanelMouseDragged(event);
-            }
+        kochPanel.setOnMouseDragged((MouseEvent event) -> {
+            kochPanelMouseDragged(event);
         });
+
+        grid.add(labelNrEdges, 0, 0, 4, 1);
+        grid.add(labelNrEdgesText, 1, 0, 22, 1);
+        grid.add(labelDrawingProgress, 0, 1, 2, 1);
+        grid.add(pbDrawing, 1, 1, 12, 1);
+        grid.add(labelDrawingProgressCurrent, 3, 1);
+        grid.add(labelDrawingProgressOutOf, 4, 1);
+        grid.add(labelDrawingProgressMax, 5, 1);
+        grid.add(labelDraw, 0, 2, 4, 1);
+        grid.add(labelDrawText, 1, 2, 22, 1);
+        grid.add(kochPanel, 0, 3, 25, 1);
+        grid.add(buttonFitFractal, 0, 4);
+        grid.add(labelLevel, 1, 4);
+        grid.add(spinnerLevel, 0, 5);
+        grid.add(buttonEdgesList, 1, 5);
+        grid.add(buttonEdgesLos, 2, 5);
 
         // Create Koch manager and set initial level
         resetZoom();
+        clearKochPanel();
 
         // Create the scene and add the grid pane
         Group root = new Group();
-        Scene scene = new Scene(root, kpWidth + 50, kpHeight + 135);
+        Scene scene = new Scene(root, kpWidth + 50, kpHeight + 190);
         root.getChildren().add(grid);
 
         // Define title and assign the scene for main window
@@ -182,8 +184,19 @@ public class JSF31KochFractalFX extends Application implements Observer {
         primaryStage.show();
     }
 
+    public void updateGui() {
+        this.labelNrEdgesText.setText("" + (int) (3 * Math.pow(4, getSpinnerLevel() - 1)));
+        this.labelLevel.setText("" + getSpinnerLevel());
+        this.labelDrawingProgressCurrent.setText("0");
+        this.labelDrawingProgressMax.setText("0");
+    }
+
     public int getSpinnerLevel() {
         return (int) spinnerLevel.getValue();
+    }
+
+    public ProgressBar getpbDrawing() {
+        return pbDrawing;
     }
 
     public void drawEdges() {
@@ -280,12 +293,8 @@ public class JSF31KochFractalFX extends Application implements Observer {
     }
 
     private Edge edgeAfterZoomAndDrag(Edge e) {
-        return new Edge(
-                e.X1 * zoom + zoomTranslateX,
-                e.Y1 * zoom + zoomTranslateY,
-                e.X2 * zoom + zoomTranslateX,
-                e.Y2 * zoom + zoomTranslateY,
-                e.color);
+        sc = new SocketClient();
+        return sc.edgeAfterZoomAndDrag(zoom, zoomTranslateX, zoomTranslateY, e);
     }
 
     public static void main(String[] args) {
@@ -303,6 +312,14 @@ public class JSF31KochFractalFX extends Application implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        requestDrawEdge((Edge) arg);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                labelDrawingProgressMax.setText(labelNrEdgesText.getText());
+                labelDrawingProgressCurrent.setText("" + (Integer.parseInt(labelDrawingProgressCurrent.getText()) + 1));
+                pbDrawing.progressProperty().set(Integer.parseInt(labelDrawingProgressCurrent.getText()) / Integer.parseInt(labelDrawingProgressMax.getText()));
+                requestDrawEdge((Edge) arg);
+            }
+        });
     }
 }

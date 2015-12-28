@@ -17,6 +17,7 @@ import java.util.Observer;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.scene.input.MouseButton;
 
 /**
  *
@@ -32,6 +33,11 @@ public class ServerRunnable implements Runnable, Observer {
     private final KochFractal koch;
     private List<Edge> edges;
     int optie = 0;
+
+    // Zoom
+    private double zoomTranslateX = 0.0;
+    private double zoomTranslateY = 0.0;
+    private double zoom = 1.0;
 
     /**
      * Create object with a given socket.
@@ -56,14 +62,23 @@ public class ServerRunnable implements Runnable, Observer {
 
             // Send random integer value to client
             this.optie = (int) in.readObject();
-            int level = (int) in.readObject();
             //bereken
-            this.koch.setLevel(level);
-            this.koch.generateLeftEdge();
-            this.koch.generateBottomEdge();
-            this.koch.generateRightEdge();
-            if (optie == 1) {
-                out.writeObject(edges);
+            if (optie == 3) {
+                zoom = (double) in.readObject();
+                zoomTranslateX = (double) in.readObject();
+                zoomTranslateY = (double) in.readObject();
+                Edge edge = (Edge) in.readObject();
+
+                out.writeObject(edgeAfterZoomAndDrag(edge));
+            } else {
+                int level = (int) in.readObject();
+                this.koch.setLevel(level);
+                this.koch.generateLeftEdge();
+                this.koch.generateBottomEdge();
+                this.koch.generateRightEdge();
+                if (optie == 1) {
+                    out.writeObject(edges);
+                }
             }
             this.socket.close();
         } catch (IOException ex) {
@@ -71,6 +86,15 @@ public class ServerRunnable implements Runnable, Observer {
         } catch (ClassNotFoundException ex) {
             LOG.log(Level.SEVERE, null, ex);
         }
+    }
+
+    public Edge edgeAfterZoomAndDrag(Edge e) {
+        return new Edge(
+                e.X1 * zoom + zoomTranslateX,
+                e.Y1 * zoom + zoomTranslateY,
+                e.X2 * zoom + zoomTranslateX,
+                e.Y2 * zoom + zoomTranslateY,
+                e.color);
     }
 
     @Override
