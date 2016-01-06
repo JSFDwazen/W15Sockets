@@ -29,13 +29,14 @@ public class SocketClient extends Observable {
     ObjectOutputStream out;
     ObjectInputStream in;
 
-    public SocketClient() {
+    public SocketClient(int id) {
         try {
             socket = new Socket("localhost", 8189);
 
             out = new ObjectOutputStream(socket.getOutputStream());
-            in = new ObjectInputStream(socket.getInputStream());
+            in = new ObjectInputStream(socket.getInputStream());            
             // End of correct initialization
+            out.writeObject(id);
         } catch (IOException ex) {
             Logger.getLogger(SocketClient.class.getName()).log(Level.SEVERE, null, ex);
         }

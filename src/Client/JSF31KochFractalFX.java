@@ -28,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.scene.control.Spinner;
 import TimeStamp.TimeStamp;
+import java.util.Random;
 
 /**
  *
@@ -37,6 +38,7 @@ public class JSF31KochFractalFX extends Application implements Observer {
 
     public static List<Edge> edges = new ArrayList<>();
     private SocketClient sc;
+    private int id;
 
     // Zoom and drag
     private double zoomTranslateX = 0.0;
@@ -75,6 +77,8 @@ public class JSF31KochFractalFX extends Application implements Observer {
     @Override
     public void start(Stage primaryStage) throws IOException {
 
+        Random r = new Random();
+        id = r.nextInt(100000);
         // Define grid pane
         GridPane grid;
         grid = new GridPane();
@@ -114,7 +118,7 @@ public class JSF31KochFractalFX extends Application implements Observer {
         buttonEdgesList.setOnAction((ActionEvent event) -> {
             edges.clear();
             updateGui();
-            sc = new SocketClient();
+            sc = new SocketClient(id);
             tsGenerate.setBegin();
             edges = sc.getEdges(getSpinnerLevel());
             requestDrawEdges();
@@ -129,7 +133,7 @@ public class JSF31KochFractalFX extends Application implements Observer {
             edges.clear();
             updateGui();
             clearKochPanel();
-            sc = new SocketClient();
+            sc = new SocketClient(id);
             tsGenerate.setBegin();
             sc.addObserver(JSF31KochFractalFX.this);
             sc.getEdge(getSpinnerLevel());
@@ -293,7 +297,7 @@ public class JSF31KochFractalFX extends Application implements Observer {
     }
 
     private Edge edgeAfterZoomAndDrag(Edge e) {
-        sc = new SocketClient();
+        sc = new SocketClient(id);
         return sc.edgeAfterZoomAndDrag(zoom, zoomTranslateX, zoomTranslateY, e);
     }
 

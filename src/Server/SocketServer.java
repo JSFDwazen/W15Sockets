@@ -4,6 +4,7 @@
  * and open the template in the editor.
  */
 package Server;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -26,11 +27,14 @@ public class SocketServer {
                     // Wait for client connection
                     Socket incomingSocket = serverSocket.accept();
                     LOG.log(Level.INFO, "New Client Connected: {0}", incomingSocket.getInetAddress());
+                    
                     // Handle client request in a new thread
                     Thread t = new Thread(new ServerRunnable(incomingSocket));
                     t.start();
                 } catch (IOException e) {
                     LOG.log(Level.WARNING, "IOException occurred: {0}", e.getMessage());
+                } catch (ClassNotFoundException ex) {
+                    Logger.getLogger(SocketServer.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
 

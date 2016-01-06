@@ -6,6 +6,7 @@
 package Server;
 
 import Shared.Edge;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -31,6 +32,7 @@ public class ServerRunnable implements Runnable, Observer {
     private ObjectOutputStream out = null;
     private ObjectInputStream in = null;
     private final KochFractal koch;
+    private FileManager fileManager;
     private List<Edge> edges;
     int optie = 0;
 
@@ -44,10 +46,11 @@ public class ServerRunnable implements Runnable, Observer {
      *
      * @param s Socket that is used to communicate with client
      */
-    public ServerRunnable(Socket s) {
+    public ServerRunnable(Socket s) throws FileNotFoundException, IOException, ClassNotFoundException {
         this.socket = s;
         this.koch = new KochFractal();
         this.koch.addObserver(this);
+        fileManager = new FileManager((int) in.readObject());
         this.edges = new ArrayList<>();
     }
 
@@ -76,6 +79,7 @@ public class ServerRunnable implements Runnable, Observer {
                 this.koch.generateLeftEdge();
                 this.koch.generateBottomEdge();
                 this.koch.generateRightEdge();
+                fileManager.writeFileMapped(edges);
                 if (optie == 1) {
                     out.writeObject(edges);
                 }
@@ -100,9 +104,8 @@ public class ServerRunnable implements Runnable, Observer {
     @Override
     public void update(Observable o, Object arg) {
         Edge e = (Edge) arg;
-        if (optie == 1) {
-            edges.add(e);
-        } else if (optie == 2) {
+        edges.add(e);
+        if (optie == 2) {
             try {
                 out.writeObject(e);
             } catch (IOException ex) {
