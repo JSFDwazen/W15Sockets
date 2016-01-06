@@ -24,8 +24,6 @@ import Shared.Edge;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.scene.control.Spinner;
 import TimeStamp.TimeStamp;
 import java.util.Random;
@@ -140,6 +138,8 @@ public class JSF31KochFractalFX extends Application implements Observer {
             tsGenerate.setEnd();
             labelDrawText.setText(tsGenerate.toString());
             tsGenerate.init();
+            // psst
+            requestDrawEdges();
         });
 
         // Add mouse clicked event to Koch panel
@@ -205,6 +205,8 @@ public class JSF31KochFractalFX extends Application implements Observer {
 
     public void drawEdges() {
         this.clearKochPanel();
+        sc = new SocketClient(id);
+        edges = sc.edgeAfterZoomAndDrag(zoom, zoomTranslateX, zoomTranslateY);
         for (Edge e : edges) {
             Platform.runLater(() -> this.drawEdge(e));
         }
@@ -221,11 +223,8 @@ public class JSF31KochFractalFX extends Application implements Observer {
         // Graphics
         GraphicsContext gc = kochPanel.getGraphicsContext2D();
 
-        // Adjust edge for zoom and drag
-        Edge e1 = edgeAfterZoomAndDrag(e);
-
         // Set line color
-        gc.setStroke(Color.web(e1.color));
+        gc.setStroke(Color.web(e.color));
 
         // Set line width depending on level
         if (currentLevel <= 3) {
@@ -237,7 +236,7 @@ public class JSF31KochFractalFX extends Application implements Observer {
         }
 
         // Draw line
-        gc.strokeLine(e1.X1, e1.Y1, e1.X2, e1.Y2);
+        gc.strokeLine(e.X1, e.Y1, e.X2, e.Y2);
     }
 
     public void setTextNrEdges(String text) {
@@ -296,9 +295,9 @@ public class JSF31KochFractalFX extends Application implements Observer {
         zoomTranslateY = (kpHeight - kpSize) / 2.0;
     }
 
-    private Edge edgeAfterZoomAndDrag(Edge e) {
+    private List<Edge> edgeAfterZoomAndDrag() {
         sc = new SocketClient(id);
-        return sc.edgeAfterZoomAndDrag(zoom, zoomTranslateX, zoomTranslateY, e);
+        return sc.edgeAfterZoomAndDrag(zoom, zoomTranslateX, zoomTranslateY);
     }
 
     public static void main(String[] args) {

@@ -15,10 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.input.MouseButton;
 
 /**
  *
@@ -50,7 +48,7 @@ public class ServerRunnable implements Runnable, Observer {
         this.socket = s;
         this.koch = new KochFractal();
         this.koch.addObserver(this);
-        fileManager = new FileManager((int) in.readObject());
+        fileManager = new FileManager();
         this.edges = new ArrayList<>();
     }
 
@@ -62,7 +60,7 @@ public class ServerRunnable implements Runnable, Observer {
             // Bind input and outputstreams
             this.in = new ObjectInputStream(socket.getInputStream());
             this.out = new ObjectOutputStream(socket.getOutputStream());
-
+            fileManager.id = (int) in.readObject();
             // Send random integer value to client
             this.optie = (int) in.readObject();
             //bereken
@@ -70,9 +68,7 @@ public class ServerRunnable implements Runnable, Observer {
                 zoom = (double) in.readObject();
                 zoomTranslateX = (double) in.readObject();
                 zoomTranslateY = (double) in.readObject();
-                Edge edge = (Edge) in.readObject();
-
-                out.writeObject(edgeAfterZoomAndDrag(edge));
+                out.writeObject(edgeAfterZoomAndDrag());
             } else {
                 int level = (int) in.readObject();
                 this.koch.setLevel(level);
@@ -85,20 +81,22 @@ public class ServerRunnable implements Runnable, Observer {
                 }
             }
             this.socket.close();
-        } catch (IOException ex) {
-            LOG.log(Level.SEVERE, null, ex);
-        } catch (ClassNotFoundException ex) {
+        } catch (IOException | ClassNotFoundException ex) {
             LOG.log(Level.SEVERE, null, ex);
         }
     }
 
-    public Edge edgeAfterZoomAndDrag(Edge e) {
-        return new Edge(
-                e.X1 * zoom + zoomTranslateX,
-                e.Y1 * zoom + zoomTranslateY,
-                e.X2 * zoom + zoomTranslateX,
-                e.Y2 * zoom + zoomTranslateY,
-                e.color);
+    public List<Edge> edgeAfterZoomAndDrag() throws IOException {
+        List<Edge> edgesZoomed = new ArrayList();
+        for (Edge e : fileManager.readFileMapped()) {
+            edgesZoomed.add(new Edge(
+                    e.X1 * zoom + zoomTranslateX,
+                    e.Y1 * zoom + zoomTranslateY,
+                    e.X2 * zoom + zoomTranslateX,
+                    e.Y2 * zoom + zoomTranslateY,
+                    e.color));
+        }
+        return edgesZoomed;
     }
 
     @Override

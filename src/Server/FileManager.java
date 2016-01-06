@@ -27,16 +27,19 @@ import javafx.scene.paint.Color;
  */
 public class FileManager {
     
-    private final File fileMapped;    
-    private final FileOutputStream writer;
+    private  File fileMapped;    
+    private  FileOutputStream writer;
+    public int id;
     
     
-    public FileManager(int id) throws FileNotFoundException{
+    public FileManager() throws FileNotFoundException{
         this.fileMapped = new File("/media/Fractal/fileMapped" + id +".tmp");
         this.writer = new FileOutputStream(fileMapped);        
     }
     
-    public void writeFileMapped(List<Edge> edges) throws IOException {        
+    public void writeFileMapped(List<Edge> edges) throws IOException {   
+        this.fileMapped = new File("/media/Fractal/fileMapped" + id +".tmp");
+        this.writer = new FileOutputStream(fileMapped); 
         this.fileMapped.delete();
         FileChannel fc = new RandomAccessFile(this.fileMapped, "rw").getChannel();
         long bufferSize = 8 * 1000000;
@@ -58,7 +61,7 @@ public class FileManager {
     
     public List<Edge> readFileMapped() throws IOException {
         List<Edge> edges = new ArrayList();
-        try (RandomAccessFile aFile = new RandomAccessFile(this.fileMapped.getAbsolutePath(), "r"); FileChannel inChannel = aFile.getChannel()) {
+        try (RandomAccessFile aFile = new RandomAccessFile("/media/Fractal/fileMapped" + id +".tmp", "r"); FileChannel inChannel = aFile.getChannel()) {
             MappedByteBuffer buffer = inChannel.map(FileChannel.MapMode.READ_ONLY, 0, inChannel.size());
             buffer.load();
             int size = buffer.getInt();

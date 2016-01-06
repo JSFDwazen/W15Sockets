@@ -10,10 +10,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,16 +68,14 @@ public class SocketClient extends Observable {
         }
     }
 
-    Edge edgeAfterZoomAndDrag(double zoom, double zoomTranslateX, double zoomTranslateY, Edge e) {
+    public List<Edge> edgeAfterZoomAndDrag(double zoom, double zoomTranslateX, double zoomTranslateY) {
         try {
             out.writeObject(3);
             out.writeObject(zoom);
             out.writeObject(zoomTranslateX);
             out.writeObject(zoomTranslateY);
-            out.writeObject(e);
             out.flush();
-
-            return (Edge) in.readObject();
+            return (List<Edge>) in.readObject();
         } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(SocketClient.class.getName()).log(Level.SEVERE, null, ex);
         }
